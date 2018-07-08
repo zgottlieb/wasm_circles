@@ -18,7 +18,7 @@
         //       alert(`2 + 1 = ${wasmModule.instance.exports.add_one(2)}`);
         //   });
 
-        const WASM_MODULE_URL = './target/wasm32-unknown-unknown/release/rust_wasm_seed.wasm';
+        const WASM_MODULE_URL = './target/wasm32-unknown-unknown/debug/rust_wasm_seed.wasm';
 
         // variable for wasm memory
         let memory;
@@ -51,6 +51,8 @@
 
         fetchAndInstantiateWasm(WASM_MODULE_URL, {env: {
             randomf: Math.random,
+            // expf should be removed, but doing so current prevents app from running in Firefox
+            expf: Math.exp,
             console_log_usize: val => console.log(usize),
             console_log_int: val => console.log("num from rust: ", val),
             console_log_str: (offset, len) => {
