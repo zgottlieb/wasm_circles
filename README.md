@@ -5,7 +5,7 @@ rustup target add wasm32-unknown-unknown --toolchain nightly
 
 to compile Rust to wasm:
 ```
-cargo +nightly build --target wasm32-unknown-unknown
+cargo +nightly build --target wasm32-unknown-unknown --release
 ```
 
 to shrink wasm module size, use `wasm-gc`:

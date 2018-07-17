@@ -3,9 +3,7 @@
 <html>
 
 <head>
-    <!-- <script src="lib/render.js" type="module"></script> -->
     <script type="module">
-
         let canvas = document.getElementById("canvas");
         let displayWidth  = canvas.clientWidth;
         let displayHeight = canvas.clientHeight;
@@ -18,7 +16,7 @@
         //       alert(`2 + 1 = ${wasmModule.instance.exports.add_one(2)}`);
         //   });
 
-        const WASM_MODULE_URL = './target/wasm32-unknown-unknown/debug/rust_wasm_seed.wasm';
+        const WASM_MODULE_URL = './target/wasm32-unknown-unknown/release/rust_wasm_seed.wasm';
 
         // variable for wasm memory
         let memory;
@@ -51,10 +49,14 @@
 
         fetchAndInstantiateWasm(WASM_MODULE_URL, {env: {
             randomf: Math.random,
+            floorf: Math.floor,
             // expf should be removed, but doing so current prevents app from running in Firefox
             expf: Math.exp,
             console_log_usize: val => console.log(usize),
-            console_log_int: val => console.log("num from rust: ", val),
+            console_log_int: val => {
+                console.log("num from rust: ", val);
+                // debugger;
+            },
             console_log_str: (offset, len) => {
                 const strBuf = new Uint8Array(memory.buffer, offset, len);
                 const str = new TextDecoder().decode(strBuf);
@@ -66,29 +68,12 @@
                 console.log(m);
 
                 let ptr = m.new_state();
-                // console.log("THING", m.get_thing(ptr));
-                let intView = new Uint32Array(m.memory.buffer);
-                console.log(intView);
-
-                
-
 
                 let circleCount = m.get_circle_count();
                 let circleDataOffset = m.get_circle_data_offset(ptr);
-
-                console.log(ptr, circleCount, circleDataOffset);
                 let circleData = new Float32Array(m.memory.buffer, circleDataOffset, circleCount * 3);
                 
-                console.log(circleData);
-
-                // m.init(ptr, displayWidth, displayHeight);
-                
                 render(ptr, circleData, circleCount, m.init, m.time_step);
-
-                // console.log(circleData);
-
-                
-
             });
     </script>
 
@@ -97,6 +82,4 @@
 <body style="margin:0; overflow: hidden">
     <canvas id="canvas" style="width: 100vw; height: 100vh; display: block"></canvas>
 </body>
-<!-- <script type="module" src="index.js"></script> -->
-
 </html>
