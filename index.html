@@ -4,23 +4,19 @@
 
 <head>
     <script type="module">
+        import render from './lib/render.js';
+
         let canvas = document.getElementById("canvas");
         let displayWidth  = canvas.clientWidth;
         let displayHeight = canvas.clientHeight;
-
-        import render from './lib/render.js';
-        // * The instantiateStreaming method commented out below is the new, improved way to load a wasm module, but
-        // it requires the webserver to support MIME type application/wasm *
-        //
-        // WebAssembly.instantiateStreaming(fetch('hello_wasm.gc.wasm')).then(wasmModule => {
-        //       alert(`2 + 1 = ${wasmModule.instance.exports.add_one(2)}`);
-        //   });
-
+        let memory; // variable for holding wasm module's memory
+        
         const WASM_MODULE_URL = './target/wasm32-unknown-unknown/release/rust_wasm_seed.wasm';
 
-        // variable for wasm memory
-        let memory;
-
+        // The WebAssembly.instantiateStreaming method is the new way to instantiate wasm modules
+        // and should be used in place of fetch / instantiate; I am not using that here because that
+        // method only works if the webserver serving the application supports MIME type "application/wasm",
+        // which I have not yet set up
         function fetchAndInstantiateWasm(url, imports) {
             return fetch(url)
                 .then(res => {
