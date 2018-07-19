@@ -15,12 +15,14 @@ pub struct CircleVelocity {
     vy: f32,
 }
 
+// Holder for app state
 pub struct State {
     circles: Vec<Circle>,
     circle_velocities: Vec<CircleVelocity>,
     grid: Vec<Vec<Vec<u32>>>,
 }
 
+// Functions coming in from Javascript
 extern "C" {
     fn randomf() -> f32;
     fn floorf(val: f32) -> i32;
@@ -37,15 +39,15 @@ fn detect_circle_collision(x1: f32, y1: f32, r1: f32, x2: f32, y2: f32, r2: f32)
     ((x2 - x1).powi(2) + (y2 - y1).powi(2)).sqrt() <= r1 + r2
 }
 
-// Set values to random positions
+// Create circles of random size and velocity and set random positioning
 #[no_mangle]
 pub unsafe fn init(state_ptr: *mut State, display_width: f32, display_height: f32) {
     let state = &mut *state_ptr;
 
     for _i in 0..CIRCLE_COUNT {
-        let mut x = 0.0;
-        let mut y = 0.0;
-        let mut r: f32 = 0.0 as f32;
+        let mut x: f32;
+        let mut y: f32;
+        let mut r: f32;
         
         loop {
             
@@ -62,7 +64,6 @@ pub unsafe fn init(state_ptr: *mut State, display_width: f32, display_height: f3
                 
                 collision = true;
             } else {
-                
                 for j in 0..state.circles.len() {
                     let j = j as usize;
 
@@ -87,6 +88,7 @@ pub unsafe fn init(state_ptr: *mut State, display_width: f32, display_height: f3
     }
 }
 
+// Updates each circle position and handle collisions
 #[no_mangle]
 pub unsafe fn time_step(state_ptr: *mut State, display_width: f32, display_height: f32) {
     let state = &mut *state_ptr;
@@ -229,8 +231,19 @@ pub unsafe fn time_step(state_ptr: *mut State, display_width: f32, display_heigh
     } 
 }
 
+/*
+* new_state() 
+* - creates a new State struct and allocates memory for grid, circles, and circle_velocities arrays and returns a Box pointer 
+* - Chose to return the Box pointer here so that when calling init() and time_step() from Javascript, the wasm module
+*   knows where in memory the arrays contained in State exist; one alternative to this is to store the arrays in global state
+*   (as is done in the C code in the egghead.io demo), but I wanted to avoid using global state
+*/
 #[no_mangle]
 pub fn new_state() -> *mut State {
+
+    // This was my solution for creating nested vectors to create a grid. Doing something like `vec![Vec::with_capacity(1000); 120]`
+    // does not work because the clone() that happens in that macro only copies values, not capacities!
+    // TODO: Determine a way to use less memory here: making vectors of size CIRCLE_COUNT for each cell in a 120 x 70 grid is too expensive!
     let grid: Vec<Vec<Vec<u32>>> = (0..GRID_WIDTH)
         .map(|_| (0..GRID_HEIGHT).map(|_| Vec::with_capacity(CIRCLE_COUNT as usize)).collect())
         .collect();
@@ -249,6 +262,11 @@ pub fn get_circle_count() -> i32 {
     CIRCLE_COUNT
 }
 
+/*
+*   get_circle_data_offset()
+*   - takes a raw pointer to a State struct
+*   - returns a raw pointer to the circles array in that State struct
+*/
 #[no_mangle]
 pub fn get_circle_data_offset(state_ptr: *mut State) -> *mut Circle {
     unsafe { (*state_ptr).circles.as_mut_ptr() }
